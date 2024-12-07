@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 10px;
+        }
+        #output {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            border: 1px solid #ddd;
+            padding: 10px;
+            max-height: 300px;
+            overflow: auto;
+        }
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>JSON Converter</h1>
+    
+    <div class="button-container">
+        <button onclick="addSampleData()">Load Sample Data</button>
+        <button onclick="convertToCSV()">Convert to CSV</button>
+        <button onclick="convertToHTMLTable()">Convert to HTML Table</button>
+    </div>
+
+    <h2>Input JSON</h2>
+    <textarea id="jsonInput" placeholder="Paste your JSON here"></textarea>
+
+    <h2>Field Mappings (JSON)</h2>
+    <textarea id="fieldMappingsInput" placeholder="[
+    { 'path': 'user.name', 'alias': 'Full Name' },
+    { 'path': 'user.contact.email', 'alias': 'Contact Email' }
+]">[
+    { "path": "user.name", "alias": "Full Name" },
+    { "path": "user.contact.email", "alias": "Contact Email" },
+    { "path": "orders[0].product", "alias": "Primary Product" },
+    { "path": "orders[0].price", "alias": "Product Price" }
+]</textarea>
+
+    <h2>Output</h2>
+    <pre id="output"></pre>
+
+    <script>
+        class JSONConverter {
+            static extractSpecificFields(obj, fieldMappings, options = {}) {
+                const {
+                    delimiter = '_',
+                    maxDepth = 5,
+                    currentDepth = 0
+                } = options;
+
+                if (currentDepth >= maxDepth) return obj;
+
+                const extractedFields = {};
+
+                const extractField = (value, mapping) => {
+                    const { path, alias } = mapping;
+                    
+                    const keys = path.split('.');
+                    
+                    let currentValue = obj;
+                    for (let key of keys) {
+                        const arrayMatch = key.match(/(.+)\[(\d+)\]/);
+                        if (arrayMatch) {
+                            const [, arrayKey, index] = arrayMatch;
+                            currentValue = currentValue[arrayKey][parseInt(index)];
+                            key = arrayKey;
+                        }
+                        
+                        if (currentValue === undefined || currentValue === null) {
+                            return null;
+                        }
+                        
+                        currentValue = currentValue[key];
+                    }
+                    
+                    return currentValue;
+                };
+
+                fieldMappings.forEach(mapping => {
+                    const extractedValue = extractField(obj, mapping);
+                    extractedFields[mapping.alias] = extractedValue;
+                });
+
+                return extractedFields;
+            }
+
+            static toCSV(jsonData, fieldMappings, options = {}) {
+                const {
+                    delimiter = ',',
+                    maxDepth = 5
+                } = options;
+
+                const processedData = jsonData.map(obj => 
+                    this.extractSpecificFields(obj, fieldMappings, { maxDepth })
+                );
+
+                const headers = fieldMappings.map(mapping => mapping.alias);
+
+                const csvRows = [
+                    headers.join(delimiter),
+                    ...processedData.map(obj => 
+                        headers.map(header => 
+                            `"${String(obj[header] ?? '').replace(/"/g, '""')}"`
+                        ).join(delimiter)
+                    )
+                ];
+
+                return csvRows.join('\n');
+            }
+
+            static toHTMLTable(jsonData, fieldMappings, options = {}) {
+                const {
+                    maxDepth = 5
+                } = options;
+
+                const processedData = jsonData.map(obj => 
+                    this.extractSpecificFields(obj, fieldMappings, { maxDepth })
+                );
+
+                const headers = fieldMappings.map(mapping => mapping.alias);
+
+                const tableRows = processedData.map(obj => 
+                    `<tr>${
+                        headers.map(header => 
+                            `<td>${obj[header] ?? ''}</td>`
+                        ).join('')
+                    }</tr>`
+                );
+
+                return `
+                    <table border="1">
+                        <thead>
+                            <tr>${
+                                headers.map(header => 
+                                    `<th>${header}</th>`
+                                ).join('')
+                            }</tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows.join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+        }
+
+        function convertToCSV() {
+            try {
+                const jsonData = JSON.parse(document.getElementById('jsonInput').value);
+                const fieldMappings = JSON.parse(document.getElementById('fieldMappingsInput').value);
+                
+                const csv = JSONConverter.toCSV(jsonData, fieldMappings);
+                document.getElementById('output').textContent = csv;
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function convertToHTMLTable() {
+            try {
+                const jsonData = JSON.parse(document.getElementById('jsonInput').value);
+                const fieldMappings = JSON.parse(document.getElementById('fieldMappingsInput').value);
+                
+                const htmlTable = JSONConverter.toHTMLTable(jsonData, fieldMappings);
+                document.getElementById('output').innerHTML = htmlTable;
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function addSampleData() {
+            const sampleJSON = JSON.stringify([
+                {
+                    user: {
+                        id: 1,
+                        name: "John Doe",
+                        contact: {
+                            email: "john@example.com",
+                            phones: ["123-456-7890", "098-765-4321"]
+                        }
+                    },
+                    orders: [
+                        { product: "Laptop", price: 1000 },
+                        { product: "Phone", price: 500 }
+                    ]
+                },
+                {
+                    user: {
+                        id: 2,
+                        name: "Jane Smith",
+                        contact: {
+                            email: "jane@example.com",
+                            phones: ["111-222-3333"]
+                        }
+                    },
+                    orders: [
+                        { product: "Tablet", price: 300 }
+                    ]
+                }
+            ], null, 2);
+
+            document.getElementById('jsonInput').value = sampleJSON;
+        }
+    </script>
+</body>
+</html>
