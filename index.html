@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,11 +13,13 @@
             padding: 20px;
             line-height: 1.6;
         }
+
         textarea {
             width: 100%;
             height: 200px;
             margin-bottom: 10px;
         }
+
         #output {
             white-space: pre-wrap;
             word-wrap: break-word;
@@ -25,11 +28,13 @@
             max-height: 300px;
             overflow: auto;
         }
+
         .button-container {
             display: flex;
             gap: 10px;
             margin-bottom: 10px;
         }
+
         button {
             padding: 10px;
             background-color: #4CAF50;
@@ -37,14 +42,92 @@
             border: none;
             cursor: pointer;
         }
+
         button:hover {
             background-color: #45a049;
         }
+
+        /* Professional Table Styling */
+        table {
+            /* Full width with controlled spacing */
+            width: 100%;
+            border-collapse: collapse;
+            font-family: Arial, sans-serif;
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        /* Table Headers */
+        table thead th {
+            background-color: #f8f9fa;
+            color: #333;
+            font-weight: bold;
+            text-align: center;
+            padding: 12px 15px;
+            border-bottom: 2px solid #dee2e6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Table Body */
+        table tbody tr {
+            transition: background-color 0.3s ease;
+        }
+
+        /* Alternate Row Highlighting */
+        table tbody tr:nth-child(even) {
+            background-color: #f2f4f6;
+        }
+
+        table tbody tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+
+        /* Row Hover Effect */
+        table tbody tr:hover {
+            background-color: #e9ecef;
+        }
+
+        /* Table Cells */
+        table tbody td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #dee2e6;
+            text-align: left;
+            color: #212529;
+        }
+
+        /* Responsive Considerations */
+        @media screen and (max-width: 600px) {
+            table {
+                font-size: 14px;
+            }
+
+            table th,
+            table td {
+                padding: 8px 10px;
+            }
+        }
+
+        /* Optional: Striped Effect Alternative */
+        .table-striped tbody tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Optional: Bordered Variation */
+        .table-bordered {
+            border: 1px solid #dee2e6;
+        }
+
+        .table-bordered th,
+        .table-bordered td {
+            border: 1px solid #dee2e6;
+        }
     </style>
 </head>
+
 <body>
     <h1>JSON Converter</h1>
-    
+
     <div class="button-container">
         <button onclick="addSampleData()">Load Sample Data</button>
         <button onclick="convertToCSV()">Convert to CSV</button>
@@ -83,9 +166,9 @@
 
                 const extractField = (value, mapping) => {
                     const { path, alias } = mapping;
-                    
+
                     const keys = path.split('.');
-                    
+
                     let currentValue = obj;
                     for (let key of keys) {
                         const arrayMatch = key.match(/(.+)\[(\d+)\]/);
@@ -94,14 +177,14 @@
                             currentValue = currentValue[arrayKey][parseInt(index)];
                             key = arrayKey;
                         }
-                        
+
                         if (currentValue === undefined || currentValue === null) {
                             return null;
                         }
-                        
+
                         currentValue = currentValue[key];
                     }
-                    
+
                     return currentValue;
                 };
 
@@ -119,7 +202,7 @@
                     maxDepth = 5
                 } = options;
 
-                const processedData = jsonData.map(obj => 
+                const processedData = jsonData.map(obj =>
                     this.extractSpecificFields(obj, fieldMappings, { maxDepth })
                 );
 
@@ -127,8 +210,8 @@
 
                 const csvRows = [
                     headers.join(delimiter),
-                    ...processedData.map(obj => 
-                        headers.map(header => 
+                    ...processedData.map(obj =>
+                        headers.map(header =>
                             `"${String(obj[header] ?? '').replace(/"/g, '""')}"`
                         ).join(delimiter)
                     )
@@ -142,28 +225,26 @@
                     maxDepth = 5
                 } = options;
 
-                const processedData = jsonData.map(obj => 
+                const processedData = jsonData.map(obj =>
                     this.extractSpecificFields(obj, fieldMappings, { maxDepth })
                 );
 
                 const headers = fieldMappings.map(mapping => mapping.alias);
 
-                const tableRows = processedData.map(obj => 
-                    `<tr>${
-                        headers.map(header => 
-                            `<td>${obj[header] ?? ''}</td>`
-                        ).join('')
+                const tableRows = processedData.map(obj =>
+                    `<tr>${headers.map(header =>
+                        `<td>${obj[header] ?? ''}</td>`
+                    ).join('')
                     }</tr>`
                 );
 
                 return `
                     <table border="1">
                         <thead>
-                            <tr>${
-                                headers.map(header => 
-                                    `<th>${header}</th>`
-                                ).join('')
-                            }</tr>
+                            <tr>${headers.map(header =>
+                    `<th>${header}</th>`
+                ).join('')
+                    }</tr>
                         </thead>
                         <tbody>
                             ${tableRows.join('')}
@@ -177,7 +258,7 @@
             try {
                 const jsonData = JSON.parse(document.getElementById('jsonInput').value);
                 const fieldMappings = JSON.parse(document.getElementById('fieldMappingsInput').value);
-                
+
                 const csv = JSONConverter.toCSV(jsonData, fieldMappings);
                 document.getElementById('output').textContent = csv;
             } catch (error) {
@@ -189,7 +270,7 @@
             try {
                 const jsonData = JSON.parse(document.getElementById('jsonInput').value);
                 const fieldMappings = JSON.parse(document.getElementById('fieldMappingsInput').value);
-                
+
                 const htmlTable = JSONConverter.toHTMLTable(jsonData, fieldMappings);
                 document.getElementById('output').innerHTML = htmlTable;
             } catch (error) {
@@ -232,4 +313,5 @@
         }
     </script>
 </body>
+
 </html>
